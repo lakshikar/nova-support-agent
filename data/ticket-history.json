@@ -1,0 +1,313 @@
+[
+  {
+    "ticketId": "TK-20235",
+    "subject": "Unable to generate quarterly depreciation report after v24.2 upgrade",
+    "body": "After upgrading to v24.2, our quarterly asset depreciation report fails with error NT-4523. We have custom depreciation schedules that were created in v23.4. The report was working fine in v24.1.",
+    "customer": "Pinnacle Energy",
+    "supportTier": "premium",
+    "severity": "high",
+    "status": "resolved",
+    "module": "asset-lifecycle",
+    "createdDate": "2024-04-28T10:15:00Z",
+    "lastUpdatedDate": "2024-05-03T14:30:00Z",
+    "assignedTo": "James Morrison",
+    "resolution": "Customer had legacy depreciation schedules from v23.4. Guided customer to use the legacy report endpoint (GET /api/v1/reports/depreciation?format=legacy) as an immediate workaround. Customer then recreated their 3 custom depreciation schedules using v24.2 templates, which resolved the issue permanently. Verified new reports match legacy report values within acceptable rounding tolerance ($0.01 per asset).",
+    "tags": [
+      "NT-4523",
+      "depreciation",
+      "reporting",
+      "v24.2-upgrade"
+    ],
+    "relatedKnownIssue": "KI-2402-001"
+  },
+  {
+    "ticketId": "TK-20237",
+    "subject": "SAML SSO login failures after Azure AD configuration change",
+    "body": "Our users are getting 'Invalid SAML Response' errors when trying to log in via SSO. We recently updated our Azure AD token signing certificate. NovaTech login page shows the error for about 5 seconds then redirects back to Azure AD.",
+    "customer": "Global Dynamics Corp",
+    "supportTier": "premium",
+    "severity": "high",
+    "status": "resolved",
+    "module": "platform",
+    "createdDate": "2024-03-15T08:45:00Z",
+    "lastUpdatedDate": "2024-03-15T16:20:00Z",
+    "assignedTo": "Maria Santos",
+    "resolution": "Customer updated their Azure AD token signing certificate but did not upload the new Federation Metadata XML to NovaTech. Guided customer to download the updated metadata and upload to Admin Console > Security > SSO Configuration. SSO login restored immediately after upload.",
+    "tags": [
+      "SSO",
+      "SAML",
+      "Azure-AD",
+      "authentication"
+    ],
+    "relatedKnownIssue": null
+  },
+  {
+    "ticketId": "TK-20238",
+    "subject": "Bulk asset import fails at 25,000 records",
+    "body": "We're trying to import 48,000 assets via CSV but the import consistently fails around the 25,000 record mark with a timeout error. We're on v24.1. The documentation says v24.1 supports up to 50,000 assets per batch import.",
+    "customer": "Metro Transit Authority",
+    "supportTier": "standard",
+    "severity": "medium",
+    "status": "resolved",
+    "module": "asset-lifecycle",
+    "createdDate": "2024-03-22T11:30:00Z",
+    "lastUpdatedDate": "2024-04-02T09:15:00Z",
+    "assignedTo": "James Morrison",
+    "resolution": "The customer's CSV file contained special characters in custom fields (specifically, unescaped commas in asset descriptions) which caused the parser to misalign columns after ~25,000 records. Advised customer to ensure all fields with commas are properly quoted. Also recommended splitting the import into 2 batches of 24,000 for reliability. Both batches imported successfully.",
+    "tags": [
+      "bulk-import",
+      "CSV",
+      "timeout"
+    ],
+    "relatedKnownIssue": null
+  },
+  {
+    "ticketId": "TK-20240",
+    "subject": "API rate limiting too aggressive for our integration",
+    "body": "Our ERP integration is hitting API rate limits (NT-1050) during our nightly sync. We have 200+ API calls that need to run within a 30-minute window. We're on Standard support with a 100 req/min limit.",
+    "customer": "Coastal Manufacturing",
+    "supportTier": "standard",
+    "severity": "medium",
+    "status": "resolved",
+    "module": "platform",
+    "createdDate": "2024-04-05T15:00:00Z",
+    "lastUpdatedDate": "2024-04-12T11:45:00Z",
+    "assignedTo": "Alex Kim",
+    "resolution": "Advised customer to: 1) Implement exponential backoff for 429 responses. 2) Use batch endpoints where available (e.g., /api/v2/assets/bulk-import instead of individual POST calls). 3) Register for webhook events instead of polling. Customer implemented recommendations and reduced API calls by 60%, resolving the rate limiting issue. Also informed customer about Premium support tier which includes 500 req/min if future needs increase.",
+    "tags": [
+      "NT-1050",
+      "rate-limit",
+      "API",
+      "integration"
+    ],
+    "relatedKnownIssue": null
+  },
+  {
+    "ticketId": "TK-20242",
+    "subject": "Slow dashboard loading after v24.2 upgrade",
+    "body": "Since upgrading to v24.2 last week, our dashboard takes 15-20 seconds to load. Before the upgrade it loaded in 2-3 seconds. All dashboard widgets seem to be rendering slowly. We have about 50 users accessing the dashboard concurrently during morning hours.",
+    "customer": "Northern Gas & Electric",
+    "supportTier": "premium",
+    "severity": "high",
+    "status": "resolved",
+    "module": "platform",
+    "createdDate": "2024-05-01T07:30:00Z",
+    "lastUpdatedDate": "2024-05-06T16:45:00Z",
+    "assignedTo": "Maria Santos",
+    "resolution": "Issue was caused by two factors: 1) The v24.2 CSS regression causing excessive dashboard widget re-rendering (fixed in v24.2.1 hotfix). 2) Customer had not applied the v24.2.1 hotfix. Applied the hotfix during a maintenance window, allowed 6 hours for index rebuild, and restarted all services. Dashboard loading time returned to 2-3 seconds after the hotfix and index rebuild completed. Also recommended customer update database statistics (novatech-cli db update-statistics --mode full) for optimal query performance.",
+    "tags": [
+      "dashboard",
+      "performance",
+      "v24.2",
+      "CSS-regression"
+    ],
+    "relatedKnownIssue": "KI-2402-006"
+  },
+  {
+    "ticketId": "TK-20243",
+    "subject": "Offline mode sync conflict on multiple work orders",
+    "body": "Two of our field technicians completed the same work order offline. When they both came back online, one technician's work was silently overwritten. We need a way to prevent this data loss.",
+    "customer": "Pacific Utilities",
+    "supportTier": "premium",
+    "severity": "high",
+    "status": "resolved",
+    "module": "field-service",
+    "createdDate": "2024-04-15T13:00:00Z",
+    "lastUpdatedDate": "2024-04-25T10:30:00Z",
+    "assignedTo": "Sarah Chen",
+    "resolution": "This was a known issue in v24.1 (KI-2401-003) that was resolved in v24.2. The v24.2 update adds a conflict resolution dialog that presents both versions to the user for manual merge. Customer was on v24.1 \u2014 recommended upgrading to v24.2 to get the fix. Customer upgraded and confirmed the conflict dialog now appears correctly when offline edits conflict.",
+    "tags": [
+      "offline-mode",
+      "sync",
+      "conflict",
+      "field-service"
+    ],
+    "relatedKnownIssue": "KI-2401-003"
+  },
+  {
+    "ticketId": "TK-20244",
+    "subject": "Supply chain demand forecast showing unrealistic predictions",
+    "body": "The new AI demand forecasting feature in v24.2 is predicting we need 500% more spare filters next quarter. Our consumption has been stable at ~200 units/quarter for 3 years. The forecast seems wildly inaccurate.",
+    "customer": "TerraCore Utilities",
+    "supportTier": "premium",
+    "severity": "medium",
+    "status": "resolved",
+    "module": "supply-chain",
+    "createdDate": "2024-05-05T09:00:00Z",
+    "lastUpdatedDate": "2024-05-12T14:20:00Z",
+    "assignedTo": "Alex Kim",
+    "resolution": "The AI demand forecasting model requires at least 12 months of historical data to produce reliable predictions. The customer's v24.2 upgrade migrated only 6 months of historical consumption data. Helped customer re-import the full 3-year consumption history using the data migration tool. After re-import, the model re-trained and predictions became consistent with historical patterns (projected 210 units for next quarter).",
+    "tags": [
+      "demand-forecast",
+      "AI",
+      "supply-chain",
+      "data-migration"
+    ],
+    "relatedKnownIssue": null
+  },
+  {
+    "ticketId": "TK-20246",
+    "subject": "Report Builder calculated columns producing wrong results",
+    "body": "We created a custom report in the new Report Builder with a calculated column: ROUND(SUM(IF(status='active', currentValue, 0))). The total shown is $0.00 even though we have 500+ active assets. Simpler calculated columns work fine.",
+    "customer": "TerraCore Utilities",
+    "supportTier": "premium",
+    "severity": "low",
+    "status": "in-progress",
+    "module": "asset-lifecycle",
+    "createdDate": "2024-05-08T11:20:00Z",
+    "lastUpdatedDate": "2024-05-15T09:00:00Z",
+    "assignedTo": "James Morrison",
+    "resolution": null,
+    "tags": [
+      "report-builder",
+      "calculated-columns",
+      "NEL"
+    ],
+    "relatedKnownIssue": "KI-2402-005"
+  },
+  {
+    "ticketId": "TK-20248",
+    "subject": "Field service scheduling producing conflicting assignments",
+    "body": "Since upgrading to v24.2, our scheduling algorithm is creating conflicting assignments for technicians at our main plant. We have two work orders (WO-5521 and WO-5523) at the Westfield Plant that were both scheduled for the same technician at overlapping times. The plant has multiple buildings with different entry points \u2014 it takes 25 minutes to get from Building A to Building C even though they're at the 'same location' according to the system. This has happened 3 times this week.",
+    "customer": "Atlas Manufacturing",
+    "supportTier": "standard",
+    "severity": "high",
+    "status": "in-progress",
+    "module": "field-service",
+    "createdDate": "2024-05-19T14:00:00Z",
+    "lastUpdatedDate": "2024-05-22T10:30:00Z",
+    "assignedTo": "Sarah Chen",
+    "resolution": null,
+    "tags": [
+      "scheduling",
+      "conflicts",
+      "same-location",
+      "v24.2"
+    ],
+    "relatedKnownIssue": "KI-2402-003"
+  },
+  {
+    "ticketId": "TK-20249",
+    "subject": "Sync service memory usage growing steadily",
+    "body": "Our monitoring shows the asset tracking sync service memory usage has been growing by about 200MB per day since we upgraded to v24.2. We're now at 14GB out of 16GB allocated. The service hasn't been restarted since the upgrade 10 days ago.",
+    "customer": "Meridian Energy",
+    "supportTier": "premium",
+    "severity": "high",
+    "status": "resolved",
+    "module": "asset-tracking",
+    "createdDate": "2024-05-10T08:00:00Z",
+    "lastUpdatedDate": "2024-05-19T11:00:00Z",
+    "assignedTo": "Maria Santos",
+    "resolution": "This was the known memory leak in the v24.2 sync service (fixed in v24.2.1 hotfix). Advised customer to: 1) Restart the sync service immediately to reclaim memory. 2) Apply the v24.2.1 hotfix which fixes the memory leak. Customer applied the hotfix and memory usage has been stable at ~4GB for the past 5 days.",
+    "tags": [
+      "memory-leak",
+      "sync-service",
+      "v24.2"
+    ],
+    "relatedKnownIssue": "KI-2402-006"
+  },
+  {
+    "ticketId": "TK-20250",
+    "subject": "Cannot assign work orders to technicians with recently renewed certifications",
+    "body": "We renewed certifications for 5 technicians last week but the scheduling system still shows them as having expired certifications. Manual assignment works but automated scheduling skips them.",
+    "customer": "Pacific Utilities",
+    "supportTier": "premium",
+    "severity": "medium",
+    "status": "resolved",
+    "module": "field-service",
+    "createdDate": "2024-05-14T10:45:00Z",
+    "lastUpdatedDate": "2024-05-16T16:00:00Z",
+    "assignedTo": "Sarah Chen",
+    "resolution": "The certification renewal was entered in the HR system but the sync to NovaTech's technician profile had not occurred. The customer's HR integration runs nightly. Triggered a manual sync of technician profiles and certifications updated immediately. Also recommended customer enable real-time webhook sync for certification changes to avoid this delay in the future.",
+    "tags": [
+      "certifications",
+      "scheduling",
+      "technician-profiles",
+      "sync"
+    ],
+    "relatedKnownIssue": null
+  },
+  {
+    "ticketId": "TK-20251",
+    "subject": "Asset tracking sync failures between Asset Lifecycle and Field Service",
+    "body": "We're seeing intermittent sync failures for assets that are tracked in both Asset Lifecycle and Field Service modules. The sync health dashboard shows 15-20 failed events per hour for the past 3 days. Error in the logs shows 'SyncConflictException: circular dependency detected'. We have about 200 assets that are tracked across both modules. This is affecting our field technicians who are seeing outdated asset information on their mobile apps.",
+    "customer": "Atlas Manufacturing",
+    "supportTier": "standard",
+    "severity": "high",
+    "status": "in-progress",
+    "module": "asset-tracking",
+    "createdDate": "2024-05-21T09:30:00Z",
+    "lastUpdatedDate": "2024-05-23T14:15:00Z",
+    "assignedTo": "Maria Santos",
+    "resolution": null,
+    "tags": [
+      "sync-failure",
+      "NT-5098",
+      "circular-dependency",
+      "asset-tracking"
+    ],
+    "relatedKnownIssue": "KI-2402-004"
+  },
+  {
+    "ticketId": "TK-20252",
+    "subject": "Performance degradation across all modules after weekend patch",
+    "body": "We applied the v24.2.1 hotfix over the weekend (Saturday night maintenance window). Since Monday morning, everything is noticeably slower \u2014 reports, field service app, dashboard, even basic navigation. Our users are complaining. We followed the upgrade instructions and waited for the index rebuild to complete (it finished Sunday afternoon). It's now been 3 full business days and performance has not recovered.",
+    "customer": "Global Dynamics Corp",
+    "supportTier": "premium",
+    "severity": "critical",
+    "status": "in-progress",
+    "module": "platform",
+    "createdDate": "2024-05-22T07:00:00Z",
+    "lastUpdatedDate": "2024-05-24T16:30:00Z",
+    "assignedTo": "Maria Santos",
+    "resolution": null,
+    "tags": [
+      "performance",
+      "v24.2.1",
+      "hotfix",
+      "system-wide-slowness"
+    ],
+    "relatedKnownIssue": "KI-2402-006"
+  },
+  {
+    "ticketId": "TK-20239",
+    "subject": "Purchase order approval workflow stuck at level 3",
+    "body": "We configured a 4-level approval workflow for purchase orders over $50,000. The workflow gets stuck at level 3 \u2014 the approver receives the notification but clicking 'Approve' does nothing. The browser console shows a JavaScript error. This happens in Chrome and Edge.",
+    "customer": "Atlas Manufacturing",
+    "supportTier": "standard",
+    "severity": "medium",
+    "status": "resolved",
+    "module": "supply-chain",
+    "createdDate": "2024-04-01T14:30:00Z",
+    "lastUpdatedDate": "2024-04-10T09:00:00Z",
+    "assignedTo": "Alex Kim",
+    "resolution": "Identified a bug in the approval workflow UI where the 'Approve' button event handler was not properly bound for approval levels beyond 3. This was a known defect in v24.1 that was fixed in v24.2. As an interim workaround, the Level 3 approver could use the API endpoint (POST /api/v2/purchase-orders/{id}/approve) to approve the PO. Customer upgraded to v24.2 and the UI approval works correctly for all levels.",
+    "tags": [
+      "approval-workflow",
+      "purchase-order",
+      "UI-bug"
+    ],
+    "relatedKnownIssue": null
+  },
+  {
+    "ticketId": "TK-20247",
+    "subject": "Mobile app GPS tracking shows wrong technician locations",
+    "body": "Since updating to the latest mobile app version (for v24.2 compatibility), GPS tracking shows our technicians in wrong locations \u2014 sometimes kilometers away from their actual position. This is happening on both Android and iOS devices. Our dispatchers rely on real-time location for emergency job assignments.",
+    "customer": "Meridian Energy",
+    "supportTier": "premium",
+    "severity": "high",
+    "status": "resolved",
+    "module": "field-service",
+    "createdDate": "2024-05-13T16:00:00Z",
+    "lastUpdatedDate": "2024-05-17T11:30:00Z",
+    "assignedTo": "Sarah Chen",
+    "resolution": "The issue was caused by cached GPS coordinates not being refreshed properly in the updated mobile app. The v24.2 mobile app changed the GPS refresh interval from 30 seconds to 60 seconds to reduce battery usage. However, a bug caused the app to serve the cached (old) coordinates even after a fresh GPS fix was available. A mobile app hotfix (v24.2.0-mobile-patch-1) was pushed that resolves the caching issue while maintaining the 60-second refresh interval for battery optimization. All affected devices received the update within 48 hours via auto-update.",
+    "tags": [
+      "GPS",
+      "mobile-app",
+      "location-tracking",
+      "field-service"
+    ],
+    "relatedKnownIssue": null
+  }
+]
