@@ -240,96 +240,83 @@ Return an InvestigationPlan with ordered steps and strategy_summary."""
         if not plan:
             return {"iteration_count": state["iteration_count"] + 1}
 
-        next_step = next((s for s in plan.steps if not s.completed), None)
-        if not next_step:
+        pending_steps = [step for step in plan.steps if not step.completed]
+        if not pending_steps:
             return {"iteration_count": state["iteration_count"] + 1}
 
         ticket = state["ticket"]
-        params = dict(next_step.parameters)
-        if next_step.tool == ToolName.LOOKUP_TICKET_HISTORY.value:
-            params.setdefault("customer", ticket.customer)
-
-        start = time.perf_counter()
-        try:
-            result = await self._mcp.call_tool(next_step.tool, params)
-            success = True
-        except Exception as exc:
-            result = {"error": str(exc)}
-            success = False
-
-        next_step.completed = True
         evidence = list(state["evidence"])
-        evidence.append(
-            EvidenceItem(
-                tool=next_step.tool,
-                query_summary=next_step.rationale,
-                result=result,
-                source_refs=self._extract_source_refs(result),
-            )
-        )
-
         tool_calls = list(state["tool_calls"])
-        tool_calls.append(
-            ToolCallRecord(
-                tool=next_step.tool,
-                parameters=params,
-                result_summary=str(result)[:500],
-                timestamp=utc_now(),
-                success=success,
-            )
-        )
+        iteration_count = state["iteration_count"]
 
-        self._logger.log_tool_call(
-            state["request_id"],
-            next_step.tool,
-            params,
-            result,
-            success,
-        )
-        duration = int((time.perf_counter() - start) * 1000)
-        self._logger.log_decision(
-            state["request_id"],
-            "execute_next_step",
-            next_step.rationale,
-            f"tool={next_step.tool}, success={success}",
-            duration,
-        )
+        for next_step in pending_steps:
+            params = dict(next_step.parameters)
+            if next_step.tool == ToolName.LOOKUP_TICKET_HISTORY.value:
+                params.setdefault("customer", ticket.customer)
+
+            start = time.perf_counter()
+            try:
+                result = await self._mcp.call_tool(next_step.tool, params)
+                success = True
+            except Exception as exc:
+                result = {"error": str(exc)}
+                success = False
+
+            next_step.completed = True
+            evidence.append(
+                EvidenceItem(
+                    tool=next_step.tool,
+                    query_summary=next_step.rationale,
+                    result=result,
+                    source_refs=self._extract_source_refs(result),
+                )
+            )
+            tool_calls.append(
+                ToolCallRecord(
+                    tool=next_step.tool,
+                    parameters=params,
+                    result_summary=str(result)[:500],
+                    timestamp=utc_now(),
+                    success=success,
+                )
+            )
+
+            self._logger.log_tool_call(
+                state["request_id"],
+                next_step.tool,
+                params,
+                result,
+                success,
+            )
+            duration = int((time.perf_counter() - start) * 1000)
+            self._logger.log_decision(
+                state["request_id"],
+                "execute_next_step",
+                next_step.rationale,
+                f"tool={next_step.tool}, success={success}",
+                duration,
+            )
+            iteration_count += 1
 
         return {
             "plan": plan,
             "evidence": evidence,
             "tool_calls": tool_calls,
-            "iteration_count": state["iteration_count"] + 1,
+            "iteration_count": iteration_count,
         }
 
     async def _evaluate_evidence(self, state: AgentState) -> dict[str, object]:
         import time
 
         start = time.perf_counter()
-        understanding = state["understanding"]
         evidence = state["evidence"]
         plan = state.get("plan")
+        pending_steps = [step for step in (plan.steps if plan else []) if not step.completed]
 
-        prompt = f"""Evaluate whether collected evidence is sufficient to produce a resolution report.
-
-Understanding: {understanding.model_dump_json() if understanding else '{}'}
-Evidence collected: {[e.model_dump() for e in evidence]}
-Remaining plan steps: {[s.model_dump() for s in (plan.steps if plan else []) if not s.completed]}
-
-Respond with JSON:
-{{"evidence_sufficient": true/false, "reason": "..."}}
-If not sufficient and more steps needed, suggest what to investigate next."""
-
-        class EvalResult(TicketUnderstanding):
-            evidence_sufficient: bool = False
-            reason: str = ""
-
-        # Use simple invoke for evaluation to avoid schema conflicts
-        raw = await self._llm.invoke(prompt, system=SYSTEM_PROMPT)
-        sufficient = "evidence_sufficient\": true" in raw.lower() or "sufficient\": true" in raw.lower()
+        sufficient = bool(evidence) and not pending_steps
         if not evidence:
             sufficient = False
-        if state["iteration_count"] >= self._settings.max_agent_iterations - 1:
+        if state["iteration_count"] >= self._settings.max_agent_iterations:
             sufficient = True
 
         duration = int((time.perf_counter() - start) * 1000)
@@ -337,7 +324,7 @@ If not sufficient and more steps needed, suggest what to investigate next."""
             state["request_id"],
             "evaluate_evidence",
             f"{len(evidence)} evidence items",
-            f"sufficient={sufficient}",
+            f"sufficient={sufficient}, pending_steps={len(pending_steps)}",
             duration,
         )
         return {"evidence_sufficient": sufficient}

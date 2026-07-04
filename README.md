@@ -19,7 +19,7 @@ See [`docs/architecture.md`](docs/architecture.md) for design decisions and diag
 
 - Python 3.11+
 - Docker & Docker Compose
-- Groq API key (default LLM) or OpenAI/Ollama
+- NVIDIA NIM API key (default LLM and embeddings) or Groq/OpenAI/Ollama
 
 ## Quick Start (Docker)
 
@@ -27,7 +27,7 @@ See [`docs/architecture.md`](docs/architecture.md) for design decisions and diag
 
 ```bash
 cp .env.example .env
-# Edit .env — set GROQ_API_KEY and OPENAI_API_KEY (for embeddings)
+# Edit .env — set NVIDIA_API_KEY (default LLM and embeddings)
 ```
 
 2. Start all services:
@@ -74,10 +74,18 @@ uvicorn api.main:app --app-dir src --reload
 Set in `.env`:
 
 ```bash
-LLM_PROVIDER=groq    # default
+LLM_PROVIDER=nvidia   # default
+LLM_PROVIDER=groq
 LLM_PROVIDER=openai
 LLM_PROVIDER=ollama
+
+EMBEDDING_PROVIDER=nvidia   # default
+EMBEDDING_PROVIDER=openai   # set EMBEDDING_DIMENSIONS=1536 and re-ingest
+EMBEDDING_PROVIDER=ollama
 ```
+
+> **Note:** Switching embedding providers changes vector dimensions. Set `EMBEDDING_DIMENSIONS`
+> accordingly (4096 for NVIDIA, 1536 for OpenAI) and re-ingest docs with `POST /api/v1/ingest?force=true`.
 
 ## Run Tests
 

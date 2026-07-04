@@ -86,8 +86,8 @@ Tools are atomic MCP endpoints.
 
 | Decision | Chosen | Alternatives Considered | Rationale |
 |---|---|---|---|
-| Default LLM | Groq (Llama 3.3 70B) | OpenAI, Ollama | Fast inference, low cost for PoC |
-| Embeddings | OpenAI text-embedding-3-small | Ollama nomic-embed | Quality for semantic doc search |
+| Default LLM | NVIDIA NIM (Llama 3.3 70B) | Groq, OpenAI, Ollama | Free tier API; OpenAI-compatible |
+| Embeddings | NVIDIA nv-embed-v1 (4096d) | OpenAI, Ollama | High-quality retrieval; requires dimension config |
 | Agent pattern | Plan-Execute-Evaluate loop | ReAct only, fixed pipeline | Shows autonomous planning per ticket |
 | Tool transport | Shared ToolRegistry + MCP wrapper | Tools only in agent | Clean Architecture + MCP requirement |
 | Max iterations | 8 | Unlimited | Prevents runaway agent loops |

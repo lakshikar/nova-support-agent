@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from contextlib import asynccontextmanager
 
 from domain.entities.models import SupportTicket
@@ -7,6 +8,8 @@ from domain.ports.support_agent import new_request_id
 from fastapi import FastAPI, HTTPException
 
 from api.dependencies import get_investigate_use_case, get_ingest_use_case, get_request_logger
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -41,16 +44,24 @@ async def health() -> dict[str, object]:
 @app.post("/api/v1/investigate")
 async def investigate(ticket: SupportTicket) -> dict[str, object]:
     request_id = new_request_id()
+    logger.info(
+        "Investigation started request_id=%s customer=%s subject=%s",
+        request_id,
+        ticket.customer,
+        ticket.subject,
+    )
     use_case = get_investigate_use_case()
     try:
         report = await use_case.execute(ticket, request_id)
     except Exception as exc:
+        logger.exception("Investigation failed request_id=%s", request_id)
         raise HTTPException(status_code=500, detail=str(exc)) from exc
+    logger.info("Investigation completed request_id=%s", request_id)
 
-    logger = get_request_logger()
+    request_logger = get_request_logger()
     return {
         "report": report.model_dump(mode="json"),
-        "logPath": logger.get_log_path(request_id),
+        "logPath": request_logger.get_log_path(request_id),
     }
 
 

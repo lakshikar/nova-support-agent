@@ -29,19 +29,21 @@ class PgVectorStore(VectorStore):
     """PostgreSQL + pgvector document store."""
 
     def __init__(self, settings: Settings) -> None:
+        self._settings = settings
         self._engine = create_engine(settings.database_url)
         self._session_factory = sessionmaker(bind=self._engine)
         self._ensure_schema()
 
     def _ensure_schema(self) -> None:
+        dimensions = self._settings.embedding_dimensions
         with self._engine.begin() as conn:
             conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
             Base.metadata.create_all(conn)
             conn.execute(
                 text(
-                    """
+                    f"""
                     ALTER TABLE document_chunks
-                    ADD COLUMN IF NOT EXISTS embedding_vec vector(1536)
+                    ADD COLUMN IF NOT EXISTS embedding_vec vector({dimensions})
                     """
                 )
             )
@@ -60,7 +62,7 @@ class PgVectorStore(VectorStore):
                         INSERT INTO document_chunks
                             (content, source_file, section, metadata_json, embedding_vec)
                         VALUES
-                            (:content, :source_file, :section, :metadata_json, :vec::vector)
+                            (:content, :source_file, :section, :metadata_json, CAST(:vec AS vector))
                         RETURNING id
                         """
                     ),
@@ -90,11 +92,11 @@ class PgVectorStore(VectorStore):
 
         query_sql = f"""
             SELECT content, source_file, section,
-                   1 - (embedding_vec <=> :vec::vector) AS score
+                   1 - (embedding_vec <=> CAST(:vec AS vector)) AS score
             FROM document_chunks
             WHERE embedding_vec IS NOT NULL
             {filter_clause}
-            ORDER BY embedding_vec <=> :vec::vector
+            ORDER BY embedding_vec <=> CAST(:vec AS vector)
             LIMIT :top_k
         """
         with self._engine.connect() as conn:
