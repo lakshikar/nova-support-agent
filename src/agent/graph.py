@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-import asyncio
+import logging
+import time
 from typing import TypedDict
 
 from langgraph.graph import END, StateGraph
@@ -55,6 +56,8 @@ SYSTEM_PROMPT = (
     "using evidence from documentation and ticket history. Be honest about uncertainty."
 )
 
+logger = logging.getLogger(__name__)
+
 
 class LangGraphSupportAgent:
     """LangGraph-based autonomous support investigation agent."""
@@ -74,7 +77,7 @@ class LangGraphSupportAgent:
         self,
         ticket: SupportTicket,
         request_id: str,
-        logger: RequestLogger,
+        request_logger: RequestLogger,
     ) -> ResolutionReport:
         initial_state: AgentState = {
             "request_id": request_id,
@@ -87,11 +90,24 @@ class LangGraphSupportAgent:
             "evidence_sufficient": False,
             "report": None,
         }
-        self._logger = logger
+        self._logger = request_logger
+        logger.info(
+            "[%s] Graph started customer=%s tier=%s subject=%r",
+            request_id,
+            ticket.customer,
+            ticket.support_tier.value,
+            ticket.subject,
+        )
         result = await self._graph.ainvoke(initial_state)
         report = result.get("report")
         if not report:
             raise RuntimeError("Agent failed to produce a resolution report")
+        logger.info(
+            "[%s] Graph finished confidence=%s diagnosis=%r",
+            request_id,
+            report.confidence_level.value,
+            report.diagnosis[:120],
+        )
         return report
 
     def _build_graph(self) -> object:
@@ -116,19 +132,28 @@ class LangGraphSupportAgent:
 
     def _should_continue(self, state: AgentState) -> str:
         if state["evidence_sufficient"]:
-            return "finish"
-        if state["iteration_count"] >= self._settings.max_agent_iterations:
-            return "finish"
-        plan = state.get("plan")
-        if plan and any(not step.completed for step in plan.steps):
-            return "continue"
-        return "finish"
+            decision = "finish"
+        elif state["iteration_count"] >= self._settings.max_agent_iterations:
+            decision = "finish"
+        elif state.get("plan") and any(not step.completed for step in state["plan"].steps):
+            decision = "continue"
+        else:
+            decision = "finish"
+        logger.info(
+            "[%s] Route evaluate_evidence -> %s (sufficient=%s iterations=%s pending_steps=%s)",
+            state["request_id"],
+            decision,
+            state["evidence_sufficient"],
+            state["iteration_count"],
+            sum(1 for s in (state.get("plan").steps if state.get("plan") else []) if not s.completed),
+        )
+        return decision
 
     async def _understand_ticket(self, state: AgentState) -> dict[str, object]:
-        import time
-
         start = time.perf_counter()
+        request_id = state["request_id"]
         ticket = state["ticket"]
+        logger.info("[%s] Node understand_ticket: extracting ticket context", request_id)
         prompt = f"""Analyze this support ticket and extract structured information.
 
 Subject: {ticket.subject}
@@ -139,7 +164,9 @@ Ticket References: {ticket.ticket_references}
 
 Extract: affected module, error codes (NT-XXXX format), severity, urgency rationale,
 referenced ticket IDs (TK-XXXXX format), keywords, and whether the issue is ambiguous.
-Note: references like #NT-4523 may be error codes, not ticket IDs."""
+Note: references like #NT-4523 may be error codes, not ticket IDs.
+Use severity one of: critical, high, medium, low.
+Use support_tier one of: standard, premium."""
 
         understanding = await self._llm.invoke_structured(
             prompt,
@@ -149,8 +176,17 @@ Note: references like #NT-4523 may be error codes, not ticket IDs."""
         understanding.support_tier = ticket.support_tier
 
         duration = int((time.perf_counter() - start) * 1000)
+        logger.info(
+            "[%s] Node understand_ticket: module=%s errors=%s severity=%s ambiguous=%s (%dms)",
+            request_id,
+            understanding.affected_module,
+            understanding.error_codes,
+            understanding.severity.value,
+            understanding.is_ambiguous,
+            duration,
+        )
         self._logger.log_decision(
-            state["request_id"],
+            request_id,
             "understand_ticket",
             ticket.subject,
             f"module={understanding.affected_module}, errors={understanding.error_codes}",
@@ -159,13 +195,12 @@ Note: references like #NT-4523 may be error codes, not ticket IDs."""
         return {"understanding": understanding}
 
     async def _plan_investigation(self, state: AgentState) -> dict[str, object]:
-        import time
-
         start = time.perf_counter()
+        request_id = state["request_id"]
         ticket = state["ticket"]
         understanding = state["understanding"]
         assert understanding is not None
-
+        logger.info("[%s] Node plan_investigation: building tool plan", request_id)
         prompt = f"""Create an investigation plan for this ticket. Choose tools and order based on
 the ticket specifics — do NOT use a fixed sequence.
 
@@ -190,8 +225,16 @@ Return an InvestigationPlan with ordered steps and strategy_summary."""
         plan = self._apply_guardrails(plan, understanding, ticket)
 
         duration = int((time.perf_counter() - start) * 1000)
+        step_summary = ", ".join(f"{s.tool}" for s in plan.steps)
+        logger.info(
+            "[%s] Node plan_investigation: %d steps [%s] (%dms)",
+            request_id,
+            len(plan.steps),
+            step_summary,
+            duration,
+        )
         self._logger.log_decision(
-            state["request_id"],
+            request_id,
             "plan_investigation",
             understanding.model_dump_json(),
             plan.strategy_summary,
@@ -208,6 +251,7 @@ Return an InvestigationPlan with ordered steps and strategy_summary."""
         tools_present = {step.tool for step in plan.steps}
 
         if understanding.error_codes and ToolName.SEARCH_DOCUMENTATION.value not in tools_present:
+            logger.info("Guardrail: inserting search_documentation for error codes")
             plan.steps.insert(
                 0,
                 InvestigationStep(
@@ -218,6 +262,7 @@ Return an InvestigationPlan with ordered steps and strategy_summary."""
             )
 
         if ToolName.CHECK_SLA_POLICY.value not in tools_present:
+            logger.info("Guardrail: inserting check_sla_policy")
             created = (ticket.created_at or utc_now()).isoformat()
             plan.steps.append(
                 InvestigationStep(
@@ -234,8 +279,7 @@ Return an InvestigationPlan with ordered steps and strategy_summary."""
         return plan
 
     async def _execute_next_step(self, state: AgentState) -> dict[str, object]:
-        import time
-
+        request_id = state["request_id"]
         plan = state.get("plan")
         if not plan:
             return {"iteration_count": state["iteration_count"] + 1}
@@ -244,6 +288,11 @@ Return an InvestigationPlan with ordered steps and strategy_summary."""
         if not pending_steps:
             return {"iteration_count": state["iteration_count"] + 1}
 
+        logger.info(
+            "[%s] Node execute_next_step: running %d tool(s)",
+            request_id,
+            len(pending_steps),
+        )
         ticket = state["ticket"]
         evidence = list(state["evidence"])
         tool_calls = list(state["tool_calls"])
@@ -255,6 +304,12 @@ Return an InvestigationPlan with ordered steps and strategy_summary."""
                 params.setdefault("customer", ticket.customer)
 
             start = time.perf_counter()
+            logger.info(
+                "[%s] Tool call %s params=%s",
+                request_id,
+                next_step.tool,
+                params,
+            )
             try:
                 result = await self._mcp.call_tool(next_step.tool, params)
                 success = True
@@ -281,16 +336,24 @@ Return an InvestigationPlan with ordered steps and strategy_summary."""
                 )
             )
 
+            duration = int((time.perf_counter() - start) * 1000)
+            logger.info(
+                "[%s] Tool result %s success=%s (%dms) refs=%s",
+                request_id,
+                next_step.tool,
+                success,
+                duration,
+                self._extract_source_refs(result),
+            )
             self._logger.log_tool_call(
-                state["request_id"],
+                request_id,
                 next_step.tool,
                 params,
                 result,
                 success,
             )
-            duration = int((time.perf_counter() - start) * 1000)
             self._logger.log_decision(
-                state["request_id"],
+                request_id,
                 "execute_next_step",
                 next_step.rationale,
                 f"tool={next_step.tool}, success={success}",
@@ -306,9 +369,8 @@ Return an InvestigationPlan with ordered steps and strategy_summary."""
         }
 
     async def _evaluate_evidence(self, state: AgentState) -> dict[str, object]:
-        import time
-
         start = time.perf_counter()
+        request_id = state["request_id"]
         evidence = state["evidence"]
         plan = state.get("plan")
         pending_steps = [step for step in (plan.steps if plan else []) if not step.completed]
@@ -320,8 +382,16 @@ Return an InvestigationPlan with ordered steps and strategy_summary."""
             sufficient = True
 
         duration = int((time.perf_counter() - start) * 1000)
+        logger.info(
+            "[%s] Node evaluate_evidence: sufficient=%s evidence=%d pending=%d (%dms)",
+            request_id,
+            sufficient,
+            len(evidence),
+            len(pending_steps),
+            duration,
+        )
         self._logger.log_decision(
-            state["request_id"],
+            request_id,
             "evaluate_evidence",
             f"{len(evidence)} evidence items",
             f"sufficient={sufficient}, pending_steps={len(pending_steps)}",
@@ -330,12 +400,16 @@ Return an InvestigationPlan with ordered steps and strategy_summary."""
         return {"evidence_sufficient": sufficient}
 
     async def _synthesize_report(self, state: AgentState) -> dict[str, object]:
-        import time
-
         start = time.perf_counter()
+        request_id = state["request_id"]
         ticket = state["ticket"]
         understanding = state["understanding"]
         evidence = state["evidence"]
+        logger.info(
+            "[%s] Node synthesize_report: generating resolution from %d evidence item(s)",
+            request_id,
+            len(evidence),
+        )
 
         prompt = f"""Synthesize a structured resolution report from the investigation evidence.
 
@@ -358,8 +432,10 @@ Produce a complete ResolutionReport with:
 - investigation_gaps (empty if confident)
 - investigation_trace entries for each major step
 
-Set request_id to "{state['request_id']}".
-Be honest about uncertainty for ambiguous tickets."""
+Set request_id to "{request_id}".
+Be honest about uncertainty for ambiguous tickets.
+Use confidence_level one of: high, medium, low.
+investigation_trace may be an empty list."""
 
         report = await self._llm.invoke_structured(
             prompt,
@@ -380,8 +456,14 @@ Be honest about uncertainty for ambiguous tickets."""
             ]
 
         duration = int((time.perf_counter() - start) * 1000)
+        logger.info(
+            "[%s] Node synthesize_report: confidence=%s (%dms)",
+            request_id,
+            report.confidence_level.value,
+            duration,
+        )
         self._logger.log_decision(
-            state["request_id"],
+            request_id,
             "synthesize_report",
             f"{len(evidence)} evidence items",
             f"confidence={report.confidence_level.value}",

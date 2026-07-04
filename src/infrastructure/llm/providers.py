@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import re
-from typing import TypeVar
+from typing import Literal, TypeVar
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_groq import ChatGroq
@@ -17,23 +17,49 @@ T = TypeVar("T", bound=BaseModel)
 
 logger = logging.getLogger(__name__)
 
-LLM_REQUEST_TIMEOUT_SEC = 120.0
-LLM_MAX_RETRIES = 2
+StructuredOutputMode = Literal["json_mode", "prompt_json"]
 
 
 class LangChainLLMProvider(LLMProvider):
     """Base adapter wrapping LangChain chat models."""
 
-    def __init__(self, chat_model: object) -> None:
+    def __init__(
+        self,
+        chat_model: object,
+        *,
+        structured_output_mode: StructuredOutputMode = "json_mode",
+    ) -> None:
         self._chat = chat_model
+        self._structured_output_mode = structured_output_mode
 
     async def invoke(self, prompt: str, system: str | None = None) -> str:
-        messages = []
+        logger.info("LLM invoke (prompt_chars=%d)", len(prompt))
+        messages = self._build_messages(prompt, system)
+        response = await self._chat.ainvoke(messages)
+        return str(response.content)
+
+    @staticmethod
+    def _build_messages(
+        prompt: str,
+        system: str | None = None,
+        *,
+        require_json_keyword: bool = False,
+    ) -> list[SystemMessage | HumanMessage]:
+        messages: list[SystemMessage | HumanMessage] = []
         if system:
             messages.append(SystemMessage(content=system))
         messages.append(HumanMessage(content=prompt))
-        response = await self._chat.ainvoke(messages)
-        return str(response.content)
+        if require_json_keyword and not LangChainLLMProvider._messages_contain_json(messages):
+            json_hint = "Respond using valid JSON."
+            if system:
+                messages[0] = SystemMessage(content=f"{system}\n\n{json_hint}")
+            else:
+                messages.insert(0, SystemMessage(content=json_hint))
+        return messages
+
+    @staticmethod
+    def _messages_contain_json(messages: list[SystemMessage | HumanMessage]) -> bool:
+        return any("json" in str(message.content).lower() for message in messages)
 
     async def invoke_structured(
         self,
@@ -41,10 +67,15 @@ class LangChainLLMProvider(LLMProvider):
         schema: type[T],
         system: str | None = None,
     ) -> T:
-        messages = []
-        if system:
-            messages.append(SystemMessage(content=system))
-        messages.append(HumanMessage(content=prompt))
+        logger.info(
+            "LLM invoke_structured schema=%s mode=%s",
+            schema.__name__,
+            self._structured_output_mode,
+        )
+        if self._structured_output_mode == "prompt_json":
+            return await self._invoke_structured_fallback(prompt, schema, system)
+
+        messages = self._build_messages(prompt, system, require_json_keyword=True)
 
         structured = self._chat.with_structured_output(schema, method="json_mode")
         try:
@@ -71,12 +102,16 @@ class LangChainLLMProvider(LLMProvider):
         schema: type[T],
         system: str | None = None,
     ) -> T:
+        schema_json = json.dumps(schema.model_json_schema(), indent=2)
         json_prompt = (
             f"{prompt}\n\n"
-            "Respond with a single JSON object only (no markdown fences) "
-            "containing all required fields."
+            f"Respond with a single JSON object only (no markdown fences). "
+            f"The JSON must conform to this schema:\n{schema_json}"
         )
-        raw = await self.invoke(json_prompt, system=system)
+        json_system = (
+            f"{system}\n\nRespond using valid JSON." if system else "Respond using valid JSON."
+        )
+        raw = await self.invoke(json_prompt, system=json_system)
         payload = self._extract_json(raw)
         return schema.model_validate(payload)
 
@@ -99,8 +134,8 @@ class GroqLLMProvider(LangChainLLMProvider):
             api_key=settings.groq_api_key,
             model=settings.groq_model,
             temperature=0.1,
-            timeout=LLM_REQUEST_TIMEOUT_SEC,
-            max_retries=LLM_MAX_RETRIES,
+            timeout=settings.llm_request_timeout_sec,
+            max_retries=settings.llm_max_retries,
         )
         super().__init__(chat)
 
@@ -111,8 +146,8 @@ class OpenAILLMProvider(LangChainLLMProvider):
             api_key=settings.openai_api_key,
             model=settings.openai_model,
             temperature=0.1,
-            timeout=LLM_REQUEST_TIMEOUT_SEC,
-            max_retries=LLM_MAX_RETRIES,
+            timeout=settings.llm_request_timeout_sec,
+            max_retries=settings.llm_max_retries,
         )
         super().__init__(chat)
 
@@ -124,8 +159,8 @@ class OllamaLLMProvider(LangChainLLMProvider):
             api_key="ollama",
             model=settings.ollama_model,
             temperature=0.1,
-            timeout=LLM_REQUEST_TIMEOUT_SEC,
-            max_retries=LLM_MAX_RETRIES,
+            timeout=settings.llm_request_timeout_sec,
+            max_retries=settings.llm_max_retries,
         )
         super().__init__(chat)
 
@@ -139,10 +174,11 @@ class NvidiaLLMProvider(LangChainLLMProvider):
             api_key=settings.nvidia_api_key,
             model=settings.nvidia_model,
             temperature=0.2,
-            timeout=LLM_REQUEST_TIMEOUT_SEC,
-            max_retries=LLM_MAX_RETRIES,
+            timeout=settings.llm_request_timeout_sec,
+            max_retries=settings.llm_max_retries,
         )
-        super().__init__(chat)
+        # NVIDIA NIM does not reliably support LangChain json_mode; use prompt JSON instead.
+        super().__init__(chat, structured_output_mode="prompt_json")
 
 
 def create_llm_provider(settings: Settings) -> LLMProvider:

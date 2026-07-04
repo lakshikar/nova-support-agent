@@ -8,7 +8,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    llm_provider: str = "nvidia"
+    llm_provider: str = "groq"
     groq_api_key: str = ""
     groq_model: str = "llama-3.3-70b-versatile"
     openai_api_key: str = ""
@@ -34,6 +34,8 @@ class Settings(BaseSettings):
     mcp_server_url: str = "http://localhost:8081/mcp"
 
     max_agent_iterations: int = 8
+    llm_request_timeout_sec: float = 120.0
+    llm_max_retries: int = 0
     default_timezone: str = "UTC"
 
 
