@@ -1,0 +1,60 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: nova
+      POSTGRES_PASSWORD: nova
+      POSTGRES_DB: nova_support
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nova -d nova_support"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mcp-server:
+    build:
+      context: .
+      dockerfile: mcp_server/Dockerfile
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://nova:nova@postgres:5432/nova_support
+      DOCS_PATH: data/raw_docs
+      TICKET_HISTORY_PATH: data/ticket-history.json
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data:ro
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://nova:nova@postgres:5432/nova_support
+      DOCS_PATH: data/raw_docs
+      TICKET_HISTORY_PATH: data/ticket-history.json
+      LOGS_PATH: logs
+      MCP_SERVER_URL: http://mcp-server:8081/mcp
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mcp-server:
+        condition: service_started
+    volumes:
+      - ./data:/app/data:ro
+      - ./logs:/app/logs
+
+volumes:
+  pgdata:
