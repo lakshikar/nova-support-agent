@@ -265,15 +265,20 @@ async def invoke(self, prompt: str, system: str | None = None) -> str: ...
 
 | Variable | Description | Default |
 |---|---|---|
-| `LLM_PROVIDER` | `groq`, `openai`, `ollama` | `groq` |
+| `LLM_PROVIDER` | `nvidia`, `groq`, `openai`, `ollama` | `nvidia` |
+| `NVIDIA_API_KEY` | NVIDIA NIM API key | — |
+| `NVIDIA_BASE_URL` | NVIDIA API base URL | `https://integrate.api.nvidia.com/v1` |
+| `NVIDIA_MODEL` | NVIDIA chat model | `meta/llama-3.3-70b-instruct` |
 | `GROQ_API_KEY` | Groq API key | — |
 | `GROQ_MODEL` | Groq model name | `llama-3.3-70b-versatile` |
 | `OPENAI_API_KEY` | OpenAI API key | — |
 | `OPENAI_MODEL` | OpenAI model name | `gpt-4o-mini` |
 | `OLLAMA_BASE_URL` | Ollama server URL | `http://localhost:11434` |
 | `OLLAMA_MODEL` | Ollama model name | `llama3` |
-| `EMBEDDING_PROVIDER` | `openai`, `ollama` | `openai` |
-| `OPENAI_EMBEDDING_MODEL` | Embedding model | `text-embedding-3-small` |
+| `EMBEDDING_PROVIDER` | `nvidia`, `openai`, `ollama` | `nvidia` |
+| `NVIDIA_EMBEDDING_MODEL` | NVIDIA embedding model | `nvidia/nv-embed-v1` |
+| `EMBEDDING_DIMENSIONS` | Vector dimensions for pgvector | `4096` |
+| `OPENAI_EMBEDDING_MODEL` | OpenAI embedding model | `text-embedding-3-small` |
 
 ## 9. Vector Store
 

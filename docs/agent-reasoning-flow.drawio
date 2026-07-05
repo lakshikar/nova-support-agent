@@ -1,0 +1,190 @@
+<mxfile host="Electron" agent="NovaTech">
+  <diagram name="Agent Reasoning Flow" id="agent-reasoning-flow">
+    <mxGraphModel dx="1937" dy="1206" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1300" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=18;fontStyle=1;fontColor=light-dark(#000000,#000000);" value="LangGraph Agent Reasoning Flow  (src/agent/graph.py)" vertex="1">
+          <mxGeometry height="30" width="520" x="390" y="10" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" parent="1" style="swimlane;startSize=22;fillColor=#ffffff;strokeColor=#cccccc;fontSize=11;fontColor=light-dark(#000000,#000000);" value="Legend" vertex="1">
+          <mxGeometry height="110" width="200" x="40" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="leg-llm" parent="legend" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;fontColor=light-dark(#000000,#000000);" value="LLM decision" vertex="1">
+          <mxGeometry height="22" width="90" x="10" y="28" as="geometry" />
+        </mxCell>
+        <mxCell id="leg-rule" parent="legend" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;fontColor=light-dark(#000000,#000000);" value="Rule / guardrail" vertex="1">
+          <mxGeometry height="22" width="90" x="105" y="28" as="geometry" />
+        </mxCell>
+        <mxCell id="leg-mcp" parent="legend" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;fontColor=light-dark(#000000,#000000);" value="MCP tool call" vertex="1">
+          <mxGeometry height="22" width="90" x="10" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="leg-state" parent="legend" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;fontColor=light-dark(#000000,#000000);" value="State update" vertex="1">
+          <mxGeometry height="22" width="90" x="105" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="leg-route" parent="legend" style="rhombus;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;fontColor=light-dark(#000000,#000000);" value="Router" vertex="1">
+          <mxGeometry height="30" width="60" x="70" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="state-box" parent="1" style="swimlane;startSize=24;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=11;fontColor=light-dark(#000000,#000000);" value="AgentState (shared across all nodes)" vertex="1">
+          <mxGeometry height="110" width="480" x="780" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="state-fields" parent="state-box" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=10;fontFamily=Courier New;fontColor=light-dark(#000000,#FFFFFF);" value="request_id, ticket&#xa;understanding, plan&#xa;evidence[], tool_calls[]&#xa;iteration_count, evidence_sufficient&#xa;report" vertex="1">
+          <mxGeometry height="80" width="460" x="10" y="28" as="geometry" />
+        </mxCell>
+        <mxCell id="start" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=12;fontColor=light-dark(#000000,#000000);" value="START&#xa;ainvoke(initial_state)" vertex="1">
+          <mxGeometry height="50" width="140" x="580" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="n1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=12;align=center;fontColor=light-dark(#000000,#000000);" value="1. understand_ticket&#xa;(LLM structured output)" vertex="1">
+          <mxGeometry height="50" width="220" x="540" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="n1-detail" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fffef0;strokeColor=#d6b656;align=left;spacingLeft=8;fontSize=10;fontColor=light-dark(#000000,#000000);" value="Input: ticket subject, body, customer, tier, references&#xa;Output → TicketUnderstanding:&#xa;  • affected_module, error_codes (NT-XXXX)&#xa;  • severity, urgency_rationale&#xa;  • referenced ticket IDs (TK-XXXXX)&#xa;  • keywords, is_ambiguous" vertex="1">
+          <mxGeometry height="90" width="340" x="260" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="n2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=12;align=center;fontColor=light-dark(#000000,#000000);" value="2. plan_investigation&#xa;(LLM structured output)" vertex="1">
+          <mxGeometry height="50" width="220" x="540" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="n2-detail" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fffef0;strokeColor=#d6b656;align=left;spacingLeft=8;fontSize=10;fontColor=light-dark(#000000,#000000);" value="LLM creates ticket-specific InvestigationPlan:&#xa;  • ordered InvestigationSteps (tool + params + rationale)&#xa;  • strategy_summary&#xa;  • NOT a fixed pipeline — plan varies per ticket" vertex="1">
+          <mxGeometry height="70" width="340" x="260" y="510" as="geometry" />
+        </mxCell>
+        <mxCell id="guardrails" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;fontSize=11;align=center;fontColor=light-dark(#000000,#000000);" value="_apply_guardrails()&#xa;(non-LLM rules)" vertex="1">
+          <mxGeometry height="45" width="180" x="820" y="455" as="geometry" />
+        </mxCell>
+        <mxCell id="guard-detail" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff5f5;strokeColor=#b85450;align=left;spacingLeft=8;fontSize=10;fontColor=light-dark(#000000,#000000);" value="If error_codes present → prepend search_documentation&#xa;Always append check_sla_policy (tier + severity + created_at)&#xa;Resets iteration_count = 0" vertex="1">
+          <mxGeometry height="55" width="320" x="820" y="510" as="geometry" />
+        </mxCell>
+        <mxCell id="tools-box" parent="1" style="swimlane;startSize=22;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=11;fontColor=light-dark(#000000,#000000);" value="Available MCP Tools" vertex="1">
+          <mxGeometry height="130" width="200" x="40" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="tools-list" parent="tools-box" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=10;fontColor=light-dark(#000000,#E6D0DE);" value="search_documentation&#xa;lookup_ticket_history&#xa;check_sla_policy&#xa;calculate_datetime" vertex="1">
+          <mxGeometry height="100" width="180" x="10" y="28" as="geometry" />
+        </mxCell>
+        <mxCell id="n3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=12;align=center;fontColor=light-dark(#000000,#000000);" value="3. execute_next_step&#xa;(MCP tool execution)" vertex="1">
+          <mxGeometry height="50" width="220" x="540" y="620" as="geometry" />
+        </mxCell>
+        <mxCell id="n3-detail" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#faf5ff;strokeColor=#9673a6;align=left;spacingLeft=8;fontSize=10;fontColor=light-dark(#000000,#000000);" value="For each pending (incomplete) step in plan:&#xa;  1. Inject customer into lookup_ticket_history params&#xa;  2. MCPToolClient.call_tool(tool, params)&#xa;  3. Mark step completed&#xa;  4. Append EvidenceItem + ToolCallRecord&#xa;  5. Log tool call + decision&#xa;  6. iteration_count += 1 per tool" vertex="1">
+          <mxGeometry height="100" width="340" x="260" y="680" as="geometry" />
+        </mxCell>
+        <mxCell id="n4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;fontSize=12;align=center;fontColor=light-dark(#000000,#000000);" value="4. evaluate_evidence&#xa;(rule-based, no LLM)" vertex="1">
+          <mxGeometry height="50" width="220" x="540" y="820" as="geometry" />
+        </mxCell>
+        <mxCell id="n4-detail" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff5f5;strokeColor=#b85450;align=left;spacingLeft=8;fontSize=10;fontColor=light-dark(#000000,#000000);" value="Sets evidence_sufficient:&#xa;  • True if evidence exists AND no pending steps&#xa;  • False if no evidence collected&#xa;  • Force True if iteration_count ≥ max_agent_iterations (8)" vertex="1">
+          <mxGeometry height="70" width="340" x="260" y="880" as="geometry" />
+        </mxCell>
+        <mxCell id="router" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=11;fontColor=light-dark(#000000,#000000);" value="_should_continue()&#xa;conditional router" vertex="1">
+          <mxGeometry height="80" width="160" x="570" y="920" as="geometry" />
+        </mxCell>
+        <mxCell id="router-detail" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f0fff0;strokeColor=#82b366;align=left;spacingLeft=8;fontSize=10;fontColor=light-dark(#000000,#000000);" value="→ finish if evidence_sufficient = True&#xa;→ finish if iteration_count ≥ 8&#xa;→ continue if pending steps remain&#xa;→ finish otherwise" vertex="1">
+          <mxGeometry height="70" width="240" x="820" y="900" as="geometry" />
+        </mxCell>
+        <mxCell id="loop-label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=11;fontStyle=2;fontColor=light-dark(#000000,#000000);" value="continue&#xa;(more steps or insufficient evidence)" vertex="1">
+          <mxGeometry height="30" width="200" x="1050" y="700" as="geometry" />
+        </mxCell>
+        <mxCell id="n5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=12;align=center;fontColor=light-dark(#000000,#000000);" value="5. synthesize_report&#xa;(LLM structured output)" vertex="1">
+          <mxGeometry height="50" width="220" x="540" y="1040" as="geometry" />
+        </mxCell>
+        <mxCell id="n5-detail" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fffef0;strokeColor=#d6b656;align=left;spacingLeft=8;fontSize=10;fontColor=light-dark(#000000,#000000);" value="Input: ticket + understanding + all evidence&#xa;Output → ResolutionReport:&#xa;  • diagnosis, recommended_resolution[]&#xa;  • confidence_level + rationale&#xa;  • sla_status, sources, escalation_recommendation&#xa;  • investigation_gaps, investigation_trace[]" vertex="1">
+          <mxGeometry height="90" width="340" x="820" y="1020" as="geometry" />
+        </mxCell>
+        <mxCell id="end" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=12;fontColor=light-dark(#000000,#000000);" value="END&#xa;ResolutionReport" vertex="1">
+          <mxGeometry height="50" width="140" x="580" y="1120" as="geometry" />
+        </mxCell>
+        <mxCell id="obs-note" parent="1" style="shape=note;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;size=14;align=left;spacingLeft=8;fontSize=10;fontColor=light-dark(#000000,#000000);" value="Observability: every node logs via RequestLogger&#xa;→ logs/{request_id}.json&#xa;(decisions, tool calls, final report)" vertex="1">
+          <mxGeometry height="70" width="240" x="40" y="620" as="geometry" />
+        </mxCell>
+        <mxCell id="e-start-n1" edge="1" parent="1" source="start" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;fontColor=light-dark(#000000,#000000);" target="n1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-n1-n2" edge="1" parent="1" source="n1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;fontColor=light-dark(#000000,#000000);" target="n2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-n2-guard" edge="1" parent="1" source="n2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontColor=light-dark(#000000,#000000);" target="guardrails">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-guard-n3" edge="1" parent="1" source="guardrails" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;fontColor=light-dark(#000000,#000000);" target="n3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="910" y="600" />
+              <mxPoint x="650" y="600" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-n3-n4" edge="1" parent="1" source="n3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;fontColor=light-dark(#000000,#000000);" target="n4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-n4-router" edge="1" parent="1" source="n4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;fontColor=light-dark(#000000,#000000);" target="router">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-router-n3" edge="1" parent="1" source="router" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#9673a6;exitX=1;exitY=0.5;entryX=1;entryY=0.5;fontColor=light-dark(#000000,#000000);" target="n3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1180" y="960" />
+              <mxPoint x="1180" y="645" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-continue-label" connectable="0" parent="e-router-n3" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=10;fontStyle=1;fontColor=light-dark(#000000,#000000);" value="continue" vertex="1">
+          <mxGeometry relative="1" x="0.2" as="geometry">
+            <mxPoint x="15" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-router-n5" edge="1" parent="1" source="router" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#82b366;exitX=0.5;exitY=1;entryX=0.5;entryY=0;fontColor=light-dark(#000000,#000000);" target="n5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-finish-label" connectable="0" parent="e-router-n5" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=10;fontStyle=1;fontColor=light-dark(#000000,#000000);" value="finish" vertex="1">
+          <mxGeometry relative="1" x="-0.2" as="geometry">
+            <mxPoint x="-20" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-n5-end" edge="1" parent="1" source="n5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;fontColor=light-dark(#000000,#000000);" target="end">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-tools-n3" edge="1" parent="1" source="tools-box" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;strokeColor=#9673a6;fontColor=light-dark(#000000,#000000);" target="n3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="140" y="645" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="llm-box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;fontSize=11;fontColor=light-dark(#000000,#000000);" value="LLMProvider&#xa;(NVIDIA | Groq | OpenAI | Ollama)" vertex="1">
+          <mxGeometry height="45" width="200" x="40" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="e-llm-n1" edge="1" parent="1" source="llm-box" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;strokeColor=#d79b00;fontColor=light-dark(#000000,#000000);" target="n1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-llm-n2" edge="1" parent="1" source="llm-box" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;strokeColor=#d79b00;fontColor=light-dark(#000000,#000000);" target="n2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="140" y="420" />
+              <mxPoint x="650" y="420" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-llm-n5" edge="1" parent="1" source="llm-box" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;strokeColor=#d79b00;fontColor=light-dark(#000000,#000000);" target="n5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="140" y="1065" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="mcp-box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=11;fontColor=light-dark(#000000,#000000);" value="MCPToolClient&#xa;(ToolRegistry)" vertex="1">
+          <mxGeometry height="45" width="160" x="40" y="820" as="geometry" />
+        </mxCell>
+        <mxCell id="e-mcp-n3" edge="1" parent="1" source="mcp-box" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;strokeColor=#9673a6;fontColor=light-dark(#000000,#000000);" target="n3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="phase1" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontStyle=3;fontColor=light-dark(#000000,#000000);rotation=-90;" value="UNDERSTAND" vertex="1">
+          <mxGeometry height="20" width="100" x="1240" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="phase2" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontStyle=3;fontColor=light-dark(#000000,#000000);rotation=-90;" value="PLAN" vertex="1">
+          <mxGeometry height="20" width="60" x="1240" y="470" as="geometry" />
+        </mxCell>
+        <mxCell id="phase3" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontStyle=3;fontColor=light-dark(#000000,#000000);rotation=-90;" value="EXECUTE ⇄ EVALUATE" vertex="1">
+          <mxGeometry height="20" width="130" x="1240" y="720" as="geometry" />
+        </mxCell>
+        <mxCell id="phase4" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontStyle=3;fontColor=light-dark(#000000,#000000);rotation=-90;" value="SYNTHESIZE" vertex="1">
+          <mxGeometry height="20" width="100" x="1240" y="1040" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

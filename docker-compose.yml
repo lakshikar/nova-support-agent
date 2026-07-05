@@ -40,6 +40,7 @@ services:
     env_file:
       - .env
     environment:
+      LLM_PROVIDER: groq
       DATABASE_URL: postgresql+psycopg://nova:nova@postgres:5432/nova_support
       DOCS_PATH: data/raw_docs
       TICKET_HISTORY_PATH: data/ticket-history.json

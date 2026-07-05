@@ -1,0 +1,170 @@
+<mxfile host="Electron" agent="NovaTech">
+  <diagram name="Deployment View" id="deployment-view">
+    <mxGraphModel dx="1356" dy="844" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=18;fontStyle=1;fontColor=light-dark(#333333,#FFFFFF);" value="NovaTech Support Agent — Deployment View (Docker Compose)" vertex="1">
+          <mxGeometry height="30" width="560" x="320" y="10" as="geometry" />
+        </mxCell>
+        <mxCell id="client" parent="1" style="shape=mxgraph.aws4.user;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontColor=light-dark(#333333,#FFFFFF);" value="Developer /&#xa;Support Engineer" vertex="1">
+          <mxGeometry height="60" width="80" x="80" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="host" parent="1" style="swimlane;startSize=28;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;fontSize=13;fontColor=light-dark(#333333,#B5739D);" value="Host Machine  (docker compose up)" vertex="1">
+          <mxGeometry height="620" width="960" x="200" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="network" parent="host" style="swimlane;startSize=28;fillColor=#e8f4fc;strokeColor=#0078d4;fontStyle=1;fontSize=12;dashed=1;dashPattern=8 4;fontColor=light-dark(#333333,#B5739D);" value="Docker Network  (default bridge)" vertex="1">
+          <mxGeometry height="560" width="920" x="20" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="api-container" parent="network" style="swimlane;startSize=28;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=12;fontColor=light-dark(#000000,#000000);" value="api  (Dockerfile)" vertex="1">
+          <mxGeometry height="220" width="280" x="30" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="api-process" parent="api-container" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;fontSize=11;fontColor=light-dark(#000000,#000000);" value="uvicorn api.main:app&#xa;Python 3.11-slim" vertex="1">
+          <mxGeometry height="40" width="240" x="20" y="35" as="geometry" />
+        </mxCell>
+        <mxCell id="api-components" parent="api-container" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#82b366;align=left;spacingLeft=8;fontSize=10;fontColor=light-dark(#000000,#000000);" value="FastAPI REST API&#xa;InvestigateTicketUseCase&#xa;LangGraph Agent&#xa;DirectMCPToolClient (in-process)&#xa;ToolRegistry (shared logic)&#xa;PgVectorStore client" vertex="1">
+          <mxGeometry height="100" width="240" x="20" y="85" as="geometry" />
+        </mxCell>
+        <mxCell id="api-port" parent="api-container" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;fontStyle=1;fontColor=light-dark(#000000,#000000);" value=":8000 → host" vertex="1">
+          <mxGeometry height="25" width="100" x="20" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="mcp-container" parent="network" style="swimlane;startSize=28;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=12;fontColor=light-dark(#000000,#000000);" value="mcp-server  (mcp_server/Dockerfile)" vertex="1">
+          <mxGeometry height="200" width="260" x="350" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="mcp-process" parent="mcp-container" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;fontSize=11;fontColor=light-dark(#000000,#000000);" value="python mcp_server/server.py&#xa;MCP over HTTP" vertex="1">
+          <mxGeometry height="40" width="220" x="20" y="35" as="geometry" />
+        </mxCell>
+        <mxCell id="mcp-components" parent="mcp-container" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#9673a6;align=left;spacingLeft=8;fontSize=10;fontColor=light-dark(#000000,#000000);" value="ToolRegistry (same logic)&#xa;search_documentation&#xa;lookup_ticket_history&#xa;check_sla_policy&#xa;calculate_datetime" vertex="1">
+          <mxGeometry height="80" width="220" x="20" y="85" as="geometry" />
+        </mxCell>
+        <mxCell id="mcp-port" parent="mcp-container" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;fontStyle=1;fontColor=light-dark(#000000,#000000);" value=":8081 → host" vertex="1">
+          <mxGeometry height="25" width="100" x="20" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="pg-container" parent="network" style="swimlane;startSize=28;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=12;fontColor=light-dark(#000000,#000000);" value="postgres  (pgvector/pgvector:pg16)" vertex="1">
+          <mxGeometry height="160" width="240" x="650" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="pg-process" parent="pg-container" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#ffffff;strokeColor=#6c8ebf;fontSize=11;fontColor=light-dark(#000000,#000000);" value="PostgreSQL 16&#xa;+ pgvector extension&#xa;DB: nova_support" vertex="1">
+          <mxGeometry height="80" width="200" x="20" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="pg-port" parent="pg-container" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;fontStyle=1;fontColor=light-dark(#000000,#000000);" value=":5432 → host" vertex="1">
+          <mxGeometry height="25" width="100" x="20" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="vol-box" parent="network" style="swimlane;startSize=28;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=12;fontColor=light-dark(#000000,#000000);" value="Persistent Volumes &amp; Mounts" vertex="1">
+          <mxGeometry height="200" width="860" x="30" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="vol-pgdata" parent="vol-box" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontColor=light-dark(#000000,#000000);" value="pgdata&#xa;(Docker volume)&#xa;PostgreSQL data" vertex="1">
+          <mxGeometry height="70" width="120" x="30" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="vol-data" parent="vol-box" style="shape=folder;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;fontColor=light-dark(#000000,#000000);" value="./data/  (read-only)&#xa;raw_docs/&#xa;ticket-history.json" vertex="1">
+          <mxGeometry height="70" width="160" x="200" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="vol-logs" parent="vol-box" style="shape=folder;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;fontColor=light-dark(#000000,#000000);" value="./logs/  (read-write)&#xa;{request_id}.json&#xa;decision traces" vertex="1">
+          <mxGeometry height="70" width="160" x="400" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="vol-env" parent="vol-box" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;fontColor=light-dark(#000000,#000000);" value=".env  (env_file)&#xa;LLM_PROVIDER&#xa;NVIDIA_API_KEY / GROQ_API_KEY&#xa;DATABASE_URL, MCP_SERVER_URL" vertex="1">
+          <mxGeometry height="70" width="220" x="600" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="mount-note" parent="vol-box" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=10;fontColor=light-dark(#000000,#000000);" value="api mounts: ./data (ro), ./logs (rw)  |  mcp-server mounts: ./data (ro)  |  Both share DATABASE_URL" vertex="1">
+          <mxGeometry height="30" width="800" x="30" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="startup-box" parent="network" style="swimlane;startSize=28;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;fontSize=12;fontColor=light-dark(#333333,#B5739D);" value="Startup Order (depends_on)" vertex="1">
+          <mxGeometry height="60" width="860" x="30" y="520" as="geometry" />
+        </mxCell>
+        <mxCell id="startup-flow" parent="startup-box" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=11;fontColor=light-dark(#333333,#B5739D);" value="1. postgres (healthcheck: pg_isready)  →  2. mcp-server  →  3. api (auto-ingest docs on startup if vector store empty)" vertex="1">
+          <mxGeometry height="25" width="820" x="20" y="32" as="geometry" />
+        </mxCell>
+        <mxCell id="cloud" parent="1" style="swimlane;startSize=28;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;fontSize=12;fontColor=light-dark(#333333,#B5739D);" value="External Cloud Services  (HTTPS, outbound from api + mcp-server)" vertex="1">
+          <mxGeometry height="100" width="960" x="200" y="720" as="geometry" />
+        </mxCell>
+        <mxCell id="llm-cloud" parent="cloud" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;fontSize=11;fontColor=light-dark(#333333,#B5739D);" value="LLM API&#xa;NVIDIA NIM (default) | Groq | OpenAI | Ollama" vertex="1">
+          <mxGeometry height="50" width="260" x="30" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="embed-cloud" parent="cloud" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;fontSize=11;fontColor=light-dark(#333333,#B5739D);" value="Embedding API&#xa;NVIDIA nv-embed-v1 (4096d)" vertex="1">
+          <mxGeometry height="50" width="200" x="320" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="cloud-note" parent="cloud" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=10;fontColor=light-dark(#333333,#B5739D);" value="Configured via LLM_PROVIDER env var; API keys from .env (never committed)" vertex="1">
+          <mxGeometry height="20" width="400" x="560" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="e-client-api" edge="1" parent="1" source="client" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;fontSize=10;fontColor=light-dark(#333333,#B5739D);" target="api-port">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-client-label" connectable="0" parent="e-client-api" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=10;fontColor=light-dark(#B5739D,#B5739D);labelBackgroundColor=none;" value="POST /api/v1/investigate&#xa;GET /health" vertex="1">
+          <mxGeometry relative="1" x="-0.2" as="geometry">
+            <mxPoint y="-15" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-api-mcp" edge="1" parent="1" source="api-components" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;strokeColor=#9673a6;fontSize=10;fontColor=light-dark(#000000,#000000);" target="mcp-process">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="390" y="240" />
+              <mxPoint x="390" y="180" />
+              <mxPoint x="590" y="180" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-api-mcp-label" connectable="0" parent="e-api-mcp" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=9;fontColor=light-dark(#B5739D,#B5739D);labelBackgroundColor=none;" value="MCP_SERVER_URL&#xa;(optional HTTP path;&#xa;local dev uses DirectClient)" vertex="1">
+          <mxGeometry relative="1" x="0.1" as="geometry">
+            <mxPoint y="-20" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-api-pg" edge="1" parent="1" source="api-components" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;fontSize=10;fontColor=light-dark(#000000,#000000);" target="pg-process">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="390" y="260" />
+              <mxPoint x="880" y="260" />
+              <mxPoint x="880" y="200" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-api-pg-label" connectable="0" parent="e-api-pg" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=9;fontColor=light-dark(#000000,#B5739D);labelBackgroundColor=none;" value="DATABASE_URL&#xa;psycopg + pgvector" vertex="1">
+          <mxGeometry relative="1" x="0.3" as="geometry">
+            <mxPoint y="-10" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-mcp-pg" edge="1" parent="1" source="mcp-components" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;fontSize=10;fontColor=light-dark(#000000,#000000);" target="pg-process">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-mcp-pg-label" connectable="0" parent="e-mcp-pg" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=9;fontColor=light-dark(#000000,#000000);" value="DATABASE_URL" vertex="1">
+          <mxGeometry relative="1" x="-0.2" as="geometry">
+            <mxPoint y="-10" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-api-llm" edge="1" parent="1" source="api-container" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;strokeColor=#d79b00;fontColor=light-dark(#333333,#B5739D);" target="llm-cloud">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="340" y="340" />
+              <mxPoint x="340" y="700" />
+              <mxPoint x="330" y="700" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-api-embed" edge="1" parent="1" source="api-container" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;strokeColor=#d79b00;fontColor=light-dark(#333333,#B5739D);" target="embed-cloud">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="340" y="680" />
+              <mxPoint x="520" y="680" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-api-data" edge="1" parent="1" source="api-container" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;strokeColor=#666666;fontColor=light-dark(#000000,#000000);" target="vol-data">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-api-logs" edge="1" parent="1" source="api-container" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;strokeColor=#666666;fontColor=light-dark(#000000,#000000);" target="vol-logs">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-mcp-data" edge="1" parent="1" source="mcp-container" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;strokeColor=#666666;fontColor=light-dark(#000000,#000000);" target="vol-data">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-pg-vol" edge="1" parent="1" source="pg-container" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;strokeColor=#666666;fontColor=light-dark(#000000,#000000);" target="vol-pgdata">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" parent="1" style="swimlane;startSize=22;fillColor=#ffffff;strokeColor=#cccccc;fontStyle=0;fontSize=11;fontColor=light-dark(#333333,#B5739D);" value="Legend" vertex="1">
+          <mxGeometry height="80" width="160" x="40" y="720" as="geometry" />
+        </mxCell>
+        <mxCell id="leg1" parent="legend" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=10;fontColor=light-dark(#333333,#B5739D);" value="——  Runtime dependency&#xa;- - -  Volume mount / optional" vertex="1">
+          <mxGeometry height="50" width="140" x="10" y="28" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
