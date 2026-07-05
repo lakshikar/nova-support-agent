@@ -5,6 +5,17 @@
 The Intelligent Support Agent autonomously investigates customer support tickets and
 produces structured resolution reports. It is a proof-of-concept, not a production system.
 
+## Architecture Diagrams
+
+| View | File | Description |
+|---|---|---|
+| High-Level | [`architecture.drawio`](architecture.drawio) | End-to-end data flow from client to tools |
+| Logical | [`logical-view.drawio`](logical-view.drawio) | Clean Architecture layers, ports, and adapters |
+| Deployment | [`deployment-view.drawio`](deployment-view.drawio) | Docker Compose services, volumes, and external APIs |
+| Agent Flow | [`agent-reasoning-flow.drawio`](agent-reasoning-flow.drawio) | LangGraph nodes, guardrails, and evaluate/continue loop |
+
+Open any `.drawio` file in [draw.io](https://app.diagrams.net/) or the VS Code Draw.io extension.
+
 ## High-Level Architecture
 
 See [`architecture.drawio`](architecture.drawio) for an editable diagram.
